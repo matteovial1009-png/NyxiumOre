@@ -45,15 +45,14 @@ public final class NyxiumOre extends JavaPlugin implements Listener {
         getLogger().info("NyxiumOre activé.");
     }
 
-    private ItemStack createNyxium() {
-        ItemStack item = new ItemStack(Material.EMERALD);
-        ItemMeta meta = item.getItemMeta();
-        meta.setDisplayName("§5Minerai de Nyxium");
-        meta.setLore(List.of("§7Un minerai extrêmement rare.", "§dUtilise §f/nyxium upgrade §dpour améliorer un objet."));
-        meta.getPersistentDataContainer().set(nyxiumItemKey, PersistentDataType.BYTE, (byte) 1);
-        item.setItemMeta(meta);
-        return item;
-    }
+    private ItemStack createNyxiumBlock() {
+    ItemStack item = new ItemStack(Material.DEEPSLATE_DIAMOND_ORE);
+    ItemMeta meta = item.getItemMeta();
+    meta.setDisplayName("§5Bloc de Minerai de Nyxium");
+    meta.setLore(List.of("§7Un bloc rare imprégné d'énergie violette."));
+    item.setItemMeta(meta);
+    return item;
+}
 
     private boolean isNyxium(ItemStack item) {
         if (item == null || item.getType() != Material.EMERALD || !item.hasItemMeta()) return false;
@@ -116,6 +115,17 @@ public boolean onCommand(CommandSender sender, Command command, String label, St
         sender.sendMessage("Cette commande doit être utilisée en jeu.");
         return true;
     }
+
+if (args.length == 1 && args[0].equalsIgnoreCase("block")) {
+    if (!player.isOp()) {
+        player.sendMessage("§cCommande réservée aux opérateurs.");
+        return true;
+    }
+
+    player.getInventory().addItem(createNyxiumBlock());
+    player.sendMessage("§5Tu as reçu un Bloc de Minerai de Nyxium !");
+    return true;
+}
 
     if (args.length == 1 && args[0].equalsIgnoreCase("give")) {
         if (!player.isOp()) {
