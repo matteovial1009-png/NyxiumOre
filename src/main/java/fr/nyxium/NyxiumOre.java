@@ -44,6 +44,21 @@ public final class NyxiumOre extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(this, this);
         getLogger().info("NyxiumOre activé.");
     }
+    
+private ItemStack createNyxium() {
+    ItemStack item = new ItemStack(Material.EMERALD);
+    ItemMeta meta = item.getItemMeta();
+    meta.setDisplayName("§5Minerai de Nyxium");
+    meta.setLore(List.of(
+        "§7Un minerai extrêmement rare.",
+        "§dUtilise §f/nyxium upgrade §dpour améliorer un objet."
+    ));
+    meta.getPersistentDataContainer().set(
+        nyxiumItemKey, PersistentDataType.BYTE, (byte) 1
+    );
+    item.setItemMeta(meta);
+    return item;
+}
 
     private ItemStack createNyxiumBlock() {
     ItemStack item = new ItemStack(Material.DEEPSLATE_DIAMOND_ORE);
