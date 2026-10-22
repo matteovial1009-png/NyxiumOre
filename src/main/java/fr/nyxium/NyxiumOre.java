@@ -109,48 +109,72 @@ public final class NyxiumOre extends JavaPlugin implements Listener {
         pdc.set(chunkOreKey, PersistentDataType.STRING, String.join(";", positions));
     }
 
-    @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage("Cette commande doit être utilisée en jeu.");
-            return true;
-        }
-        if (args.length != 1 || !args[0].equalsIgnoreCase("upgrade")) {
-            player.sendMessage("§dNyxium §7— tiens un outil ou une pièce d'armure en diamant et tape §f/nyxium upgrade");
-            return true;
-        }
-
-        ItemStack held = player.getInventory().getItemInMainHand();
-        if (held.getType() == Material.AIR || !isUpgradeable(held.getType())) {
-            player.sendMessage("§cTiens un outil ou une pièce d'armure en diamant.");
-            return true;
-        }
-        int oreSlot = -1;
-        for (int i = 0; i < player.getInventory().getSize(); i++) {
-            if (isNyxium(player.getInventory().getItem(i))) { oreSlot = i; break; }
-        }
-        if (oreSlot < 0) {
-            player.sendMessage("§cIl te faut un Minerai de Nyxium dans ton inventaire.");
-            return true;
-        }
-
-        ItemMeta meta = held.getItemMeta();
-        if (meta.getPersistentDataContainer().has(upgradedKey, PersistentDataType.BYTE)) {
-            player.sendMessage("§eCet objet est déjà amélioré.");
-            return true;
-        }
-        meta.getPersistentDataContainer().set(upgradedKey, PersistentDataType.BYTE, (byte) 1);
-        List<String> lore = meta.hasLore() ? new ArrayList<>(meta.getLore()) : new ArrayList<>();
-        lore.add("§5✦ Amélioré au Nyxium");
-        lore.add("§dPouvoir : bonus de combat");
-        meta.setLore(lore);
-        held.setItemMeta(meta);
-        ItemStack ore = player.getInventory().getItem(oreSlot);
-        if (ore.getAmount() <= 1) player.getInventory().setItem(oreSlot, null);
-        else ore.setAmount(ore.getAmount() - 1);
-        player.sendMessage("§5✦ Ton équipement a été imprégné de Nyxium !");
+    
+@Override
+public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    if (!(sender instanceof Player player)) {
+        sender.sendMessage("Cette commande doit être utilisée en jeu.");
         return true;
     }
+
+    if (args.length == 1 && args[0].equalsIgnoreCase("give")) {
+        if (!player.isOp()) {
+            player.sendMessage("§cCommande réservée aux opérateurs.");
+            return true;
+        }
+        player.getInventory().addItem(createNyxium());
+        player.sendMessage("§5Tu as reçu un Minerai de Nyxium !");
+        return true;
+    }
+
+    if (args.length != 1 || !args[0].equalsIgnoreCase("upgrade")) {
+        player.sendMessage("§dNyxium §7— commandes : §f/nyxium give §7ou §f/nyxium upgrade");
+        return true;
+    }
+
+    ItemStack held = player.getInventory().getItemInMainHand();
+    if (held.getType() == Material.AIR || !isUpgradeable(held.getType())) {
+        player.sendMessage("§cTiens un outil ou une pièce d'armure en diamant.");
+        return true;
+    }
+
+    int oreSlot = -1;
+    for (int i = 0; i < player.getInventory().getSize(); i++) {
+        if (isNyxium(player.getInventory().getItem(i))) {
+            oreSlot = i;
+            break;
+        }
+    }
+
+    if (oreSlot < 0) {
+        player.sendMessage("§cIl te faut un Minerai de Nyxium dans ton inventaire.");
+        return true;
+    }
+
+    ItemMeta meta = held.getItemMeta();
+    if (meta.getPersistentDataContainer().has(upgradedKey, PersistentDataType.BYTE)) {
+        player.sendMessage("§eCet objet est déjà amélioré.");
+        return true;
+    }
+
+    meta.getPersistentDataContainer().set(upgradedKey, PersistentDataType.BYTE, (byte) 1);
+    List<String> lore = meta.hasLore() ? new ArrayList<>(meta.getLore()) : new ArrayList<>();
+    lore.add("§5✦ Amélioré au Nyxium");
+    lore.add("§dPouvoir : bonus de combat");
+    meta.setLore(lore);
+    held.setItemMeta(meta);
+
+    ItemStack ore = player.getInventory().getItem(oreSlot);
+    if (ore.getAmount() <= 1) {
+        player.getInventory().setItem(oreSlot, null);
+    } else {
+        ore.setAmount(ore.getAmount() - 1);
+    }
+
+    player.sendMessage("§5✦ Ton équipement a été imprégné de Nyxium !");
+    return true;
+}
+
 
     private boolean isUpgradeable(Material m) {
         return switch (m) {
