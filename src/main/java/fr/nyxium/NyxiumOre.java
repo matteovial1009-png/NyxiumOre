@@ -3,7 +3,7 @@ package fr.nyxium;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
@@ -34,6 +34,8 @@ public final class NyxiumOre extends JavaPlugin implements Listener {
     private NamespacedKey chunkOreKey;
     private NamespacedKey upgradedKey;
     private NamespacedKey nyxiumItemKey;
+    private NamespacedKey nyxiumBlockItemKey;
+    private NamespacedKey placedNyxiumBlocksKey;
     private final Random random = new Random();
 
     @Override
@@ -41,6 +43,8 @@ public final class NyxiumOre extends JavaPlugin implements Listener {
         chunkOreKey = new NamespacedKey(this, "nyxium_ore_positions");
         upgradedKey = new NamespacedKey(this, "nyxium_upgraded");
         nyxiumItemKey = new NamespacedKey(this, "nyxium_item");
+        nyxiumBlockItemKey = new NamespacedKey(this, "nyxium_block_item");
+        placedNyxiumBlocksKey = new NamespacedKey(this, "placed_nyxium_blocks");
         getServer().getPluginManager().registerEvents(this, this);
         getLogger().info("NyxiumOre activé.");
     }
@@ -65,6 +69,9 @@ private ItemStack createNyxium() {
     ItemMeta meta = item.getItemMeta();
     meta.setDisplayName("§5Bloc de Minerai de Nyxium");
     meta.setLore(List.of("§7Un bloc rare imprégné d'énergie violette."));
+    meta.getPersistentDataContainer().set(
+        nyxiumBlockItemKey, PersistentDataType.BYTE, (byte) 1
+    );
     item.setItemMeta(meta);
     return item;
 }
@@ -74,6 +81,39 @@ private ItemStack createNyxium() {
         Byte marker = item.getItemMeta().getPersistentDataContainer().get(nyxiumItemKey, PersistentDataType.BYTE);
         return marker != null && marker == (byte) 1;
     }
+
+@EventHandler
+public void onNyxiumBlockPlace(BlockPlaceEvent event) {
+    ItemStack item = event.getItemInHand();
+    if (!item.hasItemMeta()) return;
+
+    Byte marker = item.getItemMeta()
+        .getPersistentDataContainer()
+        .get(nyxiumBlockItemKey, PersistentDataType.BYTE);
+
+    if (marker == null || marker != (byte) 1) return;
+
+    Block block = event.getBlockPlaced();
+    var pdc = block.getChunk().getPersistentDataContainer();
+
+    String data = pdc.get(placedNyxiumBlocksKey, PersistentDataType.STRING);
+    List<String> positions = (data == null || data.isEmpty())
+        ? new ArrayList<>()
+        : new ArrayList<>(List.of(data.split(";")));
+
+    String target = (block.getX() & 15) + ","
+        + block.getY() + "," + (block.getZ() & 15);
+
+    if (!positions.contains(target)) {
+        positions.add(target);
+    }
+
+    pdc.set(
+        placedNyxiumBlocksKey,
+        PersistentDataType.STRING,
+        String.join(";", positions)
+    );
+}
 
     @EventHandler
     public void onChunkLoad(ChunkLoadEvent event) {
@@ -105,23 +145,65 @@ private ItemStack createNyxium() {
         pdc.set(chunkOreKey, PersistentDataType.STRING, String.join(";", positions));
     }
 
-    @EventHandler
-    public void onBlockBreak(BlockBreakEvent event) {
-        Block block = event.getBlock();
-        Chunk chunk = block.getChunk();
-        var pdc = chunk.getPersistentDataContainer();
-        String data = pdc.get(chunkOreKey, PersistentDataType.STRING);
-        if (data == null || data.isEmpty()) return;
+    
+@EventHandler
+public void onBlockBreak(BlockBreakEvent event) {
+    Block block = event.getBlock();
+    var pdc = block.getChunk().getPersistentDataContainer();
 
-        String target = (block.getX() & 15) + "," + block.getY() + "," + (block.getZ() & 15);
-        List<String> positions = new ArrayList<>(List.of(data.split(";")));
-        if (!positions.remove(target)) return;
+    String target = (block.getX() & 15) + ","
+        + block.getY() + "," + (block.getZ() & 15);
 
-        event.setDropItems(false);
-        block.setType(Material.AIR, false);
-        block.getWorld().dropItemNaturally(block.getLocation(), createNyxium());
-        pdc.set(chunkOreKey, PersistentDataType.STRING, String.join(";", positions));
+    // Bloc de Nyxium posé par un joueur
+    String placedData = pdc.get(
+        placedNyxiumBlocksKey,
+        PersistentDataType.STRING
+    );
+
+    if (placedData != null && !placedData.isEmpty()) {
+        List<String> placedPositions =
+            new ArrayList<>(List.of(placedData.split(";")));
+
+        if (placedPositions.remove(target)) {
+            event.setDropItems(false);
+            block.setType(Material.AIR, false);
+            block.getWorld().dropItemNaturally(
+                block.getLocation(),
+                createNyxium()
+            );
+
+            pdc.set(
+                placedNyxiumBlocksKey,
+                PersistentDataType.STRING,
+                String.join(";", placedPositions)
+            );
+            return;
+        }
     }
+
+    // Minerai de Nyxium généré naturellement
+    String data = pdc.get(chunkOreKey, PersistentDataType.STRING);
+    if (data == null || data.isEmpty()) return;
+
+    List<String> positions =
+        new ArrayList<>(List.of(data.split(";")));
+
+    if (!positions.remove(target)) return;
+
+    event.setDropItems(false);
+    block.setType(Material.AIR, false);
+    block.getWorld().dropItemNaturally(
+        block.getLocation(),
+        createNyxium()
+    );
+
+    pdc.set(
+        chunkOreKey,
+        PersistentDataType.STRING,
+        String.join(";", positions)
+    );
+}
+
 
     
 @Override
