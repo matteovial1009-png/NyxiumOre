@@ -1,0 +1,10 @@
+name: NyxiumOre
+version: '1.0.0'
+main: fr.nyxium.NyxiumOre
+api-version: '26.2'
+description: Minerai rare Nyxium pour Paper 26.2
+author: Nyxium
+commands:
+  nyxium:
+    description: Améliore l'objet tenu avec du Nyxium
+    usage: /nyxium upgrade
