@@ -52,6 +52,7 @@ public final class NyxiumOre extends JavaPlugin implements Listener {
 private ItemStack createNyxium() {
     ItemStack item = new ItemStack(Material.EMERALD);
     ItemMeta meta = item.getItemMeta();
+    meta.setItemModel(new NamespacedKey(this, "nyxium"));
     meta.setDisplayName("§5Minerai de Nyxium");
     meta.setLore(List.of(
         "§7Un minerai extrêmement rare.",
