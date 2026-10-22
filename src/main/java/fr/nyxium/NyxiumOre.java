@@ -162,6 +162,22 @@ public boolean onCommand(CommandSender sender, Command command, String label, St
     lore.add("§5✦ Amélioré au Nyxium");
     lore.add("§dPouvoir : bonus de combat");
     meta.setLore(lore);
+    
+switch (held.getType()) {
+    case DIAMOND_PICKAXE, DIAMOND_AXE -> {
+        meta.addEnchant(Enchantment.EFFICIENCY, 10, true);
+    }
+    case DIAMOND_SWORD -> {
+        meta.addEnchant(Enchantment.SHARPNESS, 8, true);
+    }
+    case DIAMOND_HELMET, DIAMOND_CHESTPLATE,
+         DIAMOND_LEGGINGS, DIAMOND_BOOTS -> {
+        meta.addEnchant(Enchantment.PROTECTION, 8, true);
+    }
+    default -> {
+    }
+}
+
     held.setItemMeta(meta);
 
     ItemStack ore = player.getInventory().getItem(oreSlot);
